@@ -23,6 +23,7 @@ defmodule Servy.Handler do
       |> route 
       |> emojify
       |> track
+      |> put_content_length
       |> format_response
   end
 
@@ -59,6 +60,20 @@ defmodule Servy.Handler do
     |> File.read
     |> handle_file(conv)
   end
+
+  def route(%Conv{method: "GET", path: "/pages/" <> name} = conv) do
+    @pages_path
+      |> Path.join("#{name}.md")
+      |> File.read
+      |> handle_file(conv)
+      |> markdown_to_html
+  end
+
+  def markdown_to_html(%Conv{status: 200} = conv) do
+    %{ conv | resp_body: Earmark.as_html!(conv.resp_body) }
+  end
+
+  def markdown_to_html(%Conv{} = conv), do: conv
 
     #case File.read(file) do
     #  {:ok, content} ->
@@ -106,16 +121,36 @@ defmodule Servy.Handler do
     %{ conv | status: 404, resp_body: "No #{path} here!" }
   end
 
+  def put_content_length(conv) do
+    headers = Map.put(conv.resp_headers, "Content-Length", String.length(conv.resp_body))
+    %{ conv | resp_headers: headers }
+  end
+
   def format_response(%Conv{} = conv) do
-    # TODO: Use values in the map to create an HTTP response string:
     """
     HTTP/1.1 #{Conv.full_status(conv)}\r
-    Content-Type: #{conv.resp_headers["Content-Type"]}\r
-    Content-Length: #{byte_size(conv.resp_body)}\r
+    #{format_response_headers(conv)}
     \r
     #{conv.resp_body}
     """
   end
+
+  # using Enum.map:
+
+  defp format_response_headers(conv) do
+    Enum.map(conv.resp_headers, fn {key, value} ->
+      "#{key}: #{value}\r"
+    end) |> Enum.sort |> Enum.reverse |> Enum.join("\n")
+  end
+
+  # or using a comprehension:
+
+  #defp format_response_headers(conv) do
+  #  for {key, value} <- conv.resp_headers do
+  #    "#{key}: #{value}\r"
+  #  end |> Enum.sort |> Enum.reverse |> Enum.join("\n")
+  #end
+
 end
 
 request = """
@@ -187,7 +222,6 @@ response = Servy.Handler.handle(request)
 
 IO.puts response
 
-
 request = """
 DELETE /bears/1 HTTP/1.1
 Host: example.com
@@ -230,6 +264,19 @@ Accept: */*
 Content-Type: application/x-www-form-urlencoded
 
 name=Monky&type=Gray
+"""
+
+response = Servy.Handler.handle(request)
+
+IO.puts response
+
+
+request = """
+GET /pages/faq HTTP/1.1
+Host: example.com
+User-Agent: ExampleBrowser/1.0
+Accept: */*
+
 """
 
 response = Servy.Handler.handle(request)
