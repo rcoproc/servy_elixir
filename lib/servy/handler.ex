@@ -27,7 +27,7 @@ defmodule Servy.Handler do
   end
 
   def route(%Conv{ method: "GET", path: "/wildthings"} = conv) do
-    %Conv{ conv | status: 200, resp_body: "Bears, Liöns, Tigers" }
+    %Conv{ conv | status: 200, resp_body: "Bears, Lions, Tigers" }
   end
 
   #def route(conv, "GET",  "/bears") do
@@ -105,10 +105,10 @@ defmodule Servy.Handler do
   def format_response(%Conv{} = conv) do
     # TODO: Use values in the map to create an HTTP response string:
     """
-    HTTP/1.1 #{Conv.full_status(conv)}
-    Content-Type: text/html
-    Content-Length: #{byte_size(conv.resp_body)}
-
+    HTTP/1.1 #{Conv.full_status(conv)}\r
+    Content-Type: text/html\r
+    Content-Length: #{byte_size(conv.resp_body)}\r
+    \r
     #{conv.resp_body}
     """
   end
@@ -122,13 +122,13 @@ Accept: */*
 
 """
 
-expected_response = """
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 20
+#expected_response = """
+#HTTP/1.1 200 OK
+#Content-Type: text/html
+#Content-Length: 20
 
-Bears, Lions, Tigers
-"""
+#Bears, Lions, Tigers
+#"""
 
 response = Servy.Handler.handle(request)
 
