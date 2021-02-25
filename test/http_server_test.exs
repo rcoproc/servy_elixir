@@ -4,7 +4,7 @@ defmodule HttpServerTest do
   alias Servy.HttpServer
   alias Servy.HttpClient
 
-  test "accepts a request on a socket and sends back a response" do
+  test "accepts a request on a socket and sends back a response - port 4000" do
     spawn(HttpServer, :start, [4000])
 
     request = """
@@ -25,4 +25,14 @@ defmodule HttpServerTest do
     Bears, Lions, Tigers\n
     """
   end
+
+  test "accepts a request on a socket and sends back a response port 4001" do
+    spawn(HttpServer, :start, [4001])
+
+    {:ok, response} = HTTPoison.get "http://localhost:4001/wildthings"
+
+    assert response.status_code == 200
+    assert response.body == "\nBears, Lions, Tigers\n"
+  end
+
 end
