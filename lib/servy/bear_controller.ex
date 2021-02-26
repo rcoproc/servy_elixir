@@ -4,6 +4,8 @@ defmodule Servy.BearController do
   alias Servy.Bear
   alias Servy.BearView
 
+  #import Servy.View, only: [render: 3]
+
   @templates_path Path.expand("templates", File.cwd!)
 
   defp bear_item(bear) do

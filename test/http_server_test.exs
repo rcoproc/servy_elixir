@@ -29,10 +29,25 @@ defmodule HttpServerTest do
   test "accepts a request on a socket and sends back a response port 4001" do
     spawn(HttpServer, :start, [4001])
 
-    {:ok, response} = HTTPoison.get "http://localhost:4001/wildthings"
+    #url = "http://localhost:4001/wildthings"
+    urls = [
+      "http://localhost:4001/wildthings",
+      "http://localhost:4001/bears",
+      "http://localhost:4001/bears/1",
+      "http://localhost:4001/wildlife",
+      "http://localhost:4001/api/bears"
+    ]
 
+    urls
+    |> Enum.map(&Task.async(fn -> HTTPoison.get(&1) end))
+    |> Enum.map(&Task.await/1)
+    |> Enum.map(&assert_successful_response/1)
+  end
+
+
+  defp assert_successful_response({:ok, response}) do
     assert response.status_code == 200
-    assert response.body == "\nBears, Lions, Tigers\n"
+    #assert response.body == "\nBears, Lions, Tigers\n"
   end
 
 end
